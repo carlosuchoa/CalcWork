@@ -51,10 +51,15 @@ const getDaysInMonth = (year, month) => {
 
 // Render Functions
 const renderSelectors = () => {
-  const currentYear = new Date().getFullYear();
-  yearSelect.innerHTML = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i)
-    .map(year => `<option value="${year}" ${year === state.currentDate.getFullYear() ? 'selected' : ''}>${year}</option>`)
-    .join('');
+  const startYear = new Date().getFullYear() - 5;
+  const endYear = 2035;
+  const currentSelectedYear = state.currentDate.getFullYear();
+
+  let yearOptionsHTML = '';
+  for (let year = startYear; year <= endYear; year++) {
+    yearOptionsHTML += `<option value="${year}" ${year === currentSelectedYear ? 'selected' : ''}>${year}</option>`;
+  }
+  yearSelect.innerHTML = yearOptionsHTML;
 
   monthSelect.innerHTML = MONTH_NAMES
     .map((name, index) => `<option value="${index}" ${index === state.currentDate.getMonth() ? 'selected' : ''}>${name}</option>`)
