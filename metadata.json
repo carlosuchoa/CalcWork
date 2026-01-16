@@ -1,0 +1,5 @@
+{
+  "name": "Calculadora de Horas de Trabalho",
+  "description": "Uma aplicação para calcular as horas de trabalho diárias e mensais, incluindo compensação e licenças, para um controle preciso do banco de horas.",
+  "requestFramePermissions": []
+}
