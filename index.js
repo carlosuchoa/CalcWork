@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
         compensationHours: '00:00',
         leaveDays: 0,
     };
+    
+    let undoStack = [];
+    let redoStack = [];
 
     // --- CONSTANTS & HELPERS ---
     const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -150,8 +153,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
 
         dailyEntriesContainer.innerHTML = `
-            <div class="p-4 bg-slate-50 border-b border-slate-200">
+            <div class="flex items-center justify-between p-4 bg-slate-50 border-b border-slate-200">
                 <h3 class="text-lg font-bold text-slate-700">${MONTH_NAMES[selectedMonth]} ${selectedYear}</h3>
+                <div>
+                    <button id="undo-btn" class="px-3 py-1 text-sm rounded-md text-slate-500 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" ${undoStack.length === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-undo mr-1"></i> Desfazer
+                    </button>
+                    <button id="redo-btn" class="px-3 py-1 text-sm rounded-md text-slate-500 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" ${redoStack.length === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-redo mr-1"></i> Refazer
+                    </button>
+                </div>
             </div>
             <div class="max-h-[60vh] overflow-y-auto">
                 <div class="divide-y divide-slate-200">${dailyRows}</div>
@@ -216,26 +227,53 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    // --- EVENT HANDLERS ---
+    // --- EVENT HANDLERS & ACTIONS ---
+    const clearHistory = () => {
+        undoStack = [];
+        redoStack = [];
+    };
+
     const handleYearChange = (e) => {
         const newYear = parseInt(e.target.value, 10);
         state.currentDate.setFullYear(newYear);
+        clearHistory();
         render();
     };
 
     const handleMonthChange = (e) => {
         const newMonth = parseInt(e.target.value, 10);
         state.currentDate.setMonth(newMonth);
+        clearHistory();
         render();
     };
 
     const handleTimeInputChange = (e) => {
+        // Deep copy for history
+        undoStack.push(JSON.parse(JSON.stringify(state.timeEntries)));
+        redoStack = []; // Clear redo stack on new action
+
         const { day, type } = e.target.dataset;
         const dayNum = parseInt(day, 10);
         if (!state.timeEntries[dayNum]) {
             state.timeEntries[dayNum] = { start: '', end: '' };
         }
         state.timeEntries[dayNum][type] = e.target.value;
+        render();
+    };
+
+    const handleUndo = () => {
+        if (undoStack.length === 0) return;
+        // Deep copy for history
+        redoStack.push(JSON.parse(JSON.stringify(state.timeEntries)));
+        state.timeEntries = undoStack.pop();
+        render();
+    };
+
+    const handleRedo = () => {
+        if (redoStack.length === 0) return;
+        // Deep copy for history
+        undoStack.push(JSON.parse(JSON.stringify(state.timeEntries)));
+        state.timeEntries = redoStack.pop();
         render();
     };
     
@@ -307,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.save(`relatorio_horas_${currentDate.getMonth() + 1}_${currentDate.getFullYear()}.pdf`);
     };
 
-
     const attachEventListeners = () => {
         document.getElementById('year-select').addEventListener('change', handleYearChange);
         document.getElementById('month-select').addEventListener('change', handleMonthChange);
@@ -324,6 +361,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('export-pdf').addEventListener('click', handleExportPDF);
         document.getElementById('export-csv').addEventListener('click', handleExportCSV);
+        document.getElementById('undo-btn').addEventListener('click', handleUndo);
+        document.getElementById('redo-btn').addEventListener('click', handleRedo);
     };
 
     // --- INITIAL RENDER ---
